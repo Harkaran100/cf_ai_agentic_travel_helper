@@ -1,7 +1,5 @@
 import { routeAgentRequest, type Schedule } from "agents";
-
 import { getSchedulePrompt } from "agents/schedule";
-
 import { AIChatAgent } from "agents/ai-chat-agent";
 import {
   generateId,
@@ -13,17 +11,15 @@ import {
   createUIMessageStreamResponse,
   type ToolSet
 } from "ai";
-import { openai } from "@ai-sdk/openai";
+// ⬇️ use Workers AI instead of OpenAI
+import { createWorkersAI } from "workers-ai-provider";
+
 import { processToolCalls, cleanupMessages } from "./utils";
 import { tools, executions } from "./tools";
-// import { env } from "cloudflare:workers";
 
-const model = openai("gpt-4o-2024-11-20");
-// Cloudflare AI Gateway
-// const openai = createOpenAI({
-//   apiKey: env.OPENAI_API_KEY,
-//   baseURL: env.GATEWAY_BASE_URL,
-// });
+// NOTE: Ensure your wrangler.jsonc has:
+// "ai": { "binding": "AI" }
+// and that your Env type includes: AI: Ai
 
 /**
  * Chat Agent implementation that handles real-time AI chat interactions
@@ -36,11 +32,12 @@ export class Chat extends AIChatAgent<Env> {
     onFinish: StreamTextOnFinishCallback<ToolSet>,
     _options?: { abortSignal?: AbortSignal }
   ) {
-    // const mcpConnection = await this.mcp.connect(
-    //   "https://path-to-mcp-server/sse"
-    // );
+    // Set up Workers AI provider using the bound AI service
+    const workersai = createWorkersAI({ binding: this.env.AI });
+    // Pick a Workers AI instruct model available to your account:
+    // Tip: `npx wrangler ai models list`
+    const model = workersai("@cf/meta/llama-3-8b-instruct");
 
-    // Collect all tools, including MCP tools
     const allTools = {
       ...tools,
       ...this.mcp.getAITools()
@@ -48,11 +45,9 @@ export class Chat extends AIChatAgent<Env> {
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
-        // Clean up incomplete tool calls to prevent API errors
         const cleanedMessages = cleanupMessages(this.messages);
 
-        // Process any pending tool calls from previous messages
-        // This handles human-in-the-loop confirmations for tools
+        // Handle any pending tool calls (human-in-the-loop)
         const processedMessages = await processToolCalls({
           messages: cleanedMessages,
           dataStream: writer,
@@ -61,21 +56,27 @@ export class Chat extends AIChatAgent<Env> {
         });
 
         const result = streamText({
-          system: `You are a helpful assistant that can do various tasks... 
+          system: `You are TravelPlanner, a concise, friendly agent that builds lightweight travel itineraries.
+
+Goals:
+- Ask brief clarifying questions only when needed (dates, budget/day, interests, origin city).
+- Produce a day-by-day plan (activities, neighborhoods, rough timing, transit mode hints).
+- Include a simple budget band per day (cheap / mid / premium) and flag constraints if unrealistic.
+- Prefer walking/public transit where reasonable; avoid red-eye flights unless user opts in.
+- Keep answers grounded and clearly “suggested” (no guarantees). Encourage users to verify details.
+- Use tools if available (e.g., schedule tool) but never over-ask for confirmation.
+
+Memory:
+- Remember simple preferences (e.g., walkable, foodie, no red-eye) for this conversation using state.
 
 ${getSchedulePrompt({ date: new Date() })}
 
 If the user asks to schedule a task, use the schedule tool to schedule the task.
 `,
-
           messages: convertToModelMessages(processedMessages),
           model,
           tools: allTools,
-          // Type boundary: streamText expects specific tool types, but base class uses ToolSet
-          // This is safe because our tools satisfy ToolSet interface (verified by 'satisfies' in tools.ts)
-          onFinish: onFinish as unknown as StreamTextOnFinishCallback<
-            typeof allTools
-          >,
+          onFinish: onFinish as unknown as StreamTextOnFinishCallback<typeof allTools>,
           stopWhen: stepCountIs(10)
         });
 
@@ -85,21 +86,15 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
 
     return createUIMessageStreamResponse({ stream });
   }
+
   async executeTask(description: string, _task: Schedule<string>) {
     await this.saveMessages([
       ...this.messages,
       {
         id: generateId(),
         role: "user",
-        parts: [
-          {
-            type: "text",
-            text: `Running scheduled task: ${description}`
-          }
-        ],
-        metadata: {
-          createdAt: new Date()
-        }
+        parts: [{ type: "text", text: `Running scheduled task: ${description}` }],
+        metadata: { createdAt: new Date() }
       }
     ]);
   }
@@ -112,19 +107,13 @@ export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext) {
     const url = new URL(request.url);
 
+    // 🔧 Stub for the starter UI's health check
     if (url.pathname === "/check-open-ai-key") {
-      const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
-      return Response.json({
-        success: hasOpenAIKey
-      });
+      return Response.json({ success: true });
     }
-    if (!process.env.OPENAI_API_KEY) {
-      console.error(
-        "OPENAI_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
-      );
-    }
+
+    // Route the request to our agent or return 404 if not found
     return (
-      // Route the request to our agent or return 404 if not found
       (await routeAgentRequest(request, env)) ||
       new Response("Not found", { status: 404 })
     );
