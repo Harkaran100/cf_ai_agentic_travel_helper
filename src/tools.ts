@@ -53,12 +53,14 @@ const upsertPreferences = tool({
     const { agent } = getCurrentAgent<Chat>();
 
     // 1) Read the whole current state from agent.state
-    const state = (agent!.state as {
-      profile?: { preferences?: Record<string, unknown>; notes?: string };
-    }) || {};
+    const state =
+      (agent!.state as {
+        profile?: { preferences?: Record<string, unknown>; notes?: string };
+      }) || {};
 
     const existing =
-      state.profile ?? ({ preferences: {}, notes: undefined } as {
+      state.profile ??
+      ({ preferences: {}, notes: undefined } as {
         preferences: Record<string, unknown>;
         notes?: string;
       });
@@ -81,7 +83,6 @@ const upsertPreferences = tool({
     };
   }
 });
-
 
 const scheduleTask = tool({
   description: "A tool to schedule a task to be executed at a later time",

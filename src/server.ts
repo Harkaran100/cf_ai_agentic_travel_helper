@@ -4,9 +4,8 @@ import { AIChatAgent } from "agents/ai-chat-agent";
 import {
   generateId,
   streamText,
-  generateText, 
+  generateText,
   type StreamTextOnFinishCallback,
-  stepCountIs,
   createUIMessageStream,
   convertToModelMessages,
   createUIMessageStreamResponse,
@@ -139,12 +138,13 @@ export class Chat extends AIChatAgent<Env> {
           typeof allTools
         > = async (final) => {
           // First let the framework persist the message, etc.
-          await (onFinish as unknown as StreamTextOnFinishCallback<
-            typeof allTools
-          >)(final);
+          await (
+            onFinish as unknown as StreamTextOnFinishCallback<typeof allTools>
+          )(final);
 
           try {
-            if (!lastUserText || !looksLikeItineraryRequest(lastUserText)) return;
+            if (!lastUserText || !looksLikeItineraryRequest(lastUserText))
+              return;
 
             const s = (this.state as AgentState) || {};
             const itineraryId = itineraryIdFrom(lastUserText);
@@ -161,7 +161,10 @@ export class Chat extends AIChatAgent<Env> {
                 text: final?.text ?? "",
                 createdAt: new Date().toISOString()
               },
-              altOfferedFor: { ...(s.altOfferedFor ?? {}), [itineraryId]: false }
+              altOfferedFor: {
+                ...(s.altOfferedFor ?? {}),
+                [itineraryId]: false
+              }
             };
             await this.setState(updated);
 
@@ -182,7 +185,7 @@ export class Chat extends AIChatAgent<Env> {
           model,
           tools: allTools,
           onFinish: wrappedOnFinish,
-          maxOutputTokens: 3500,   // plenty for a compact alt
+          maxOutputTokens: 3500, // plenty for a compact alt
           temperature: 0.6
         });
 
@@ -255,9 +258,8 @@ export class Chat extends AIChatAgent<Env> {
             "You are an efficient travel-planning writer. Output only the alternative itinerary in a clean Day 1..N format; no preamble.",
           prompt: altPrompt,
           model,
-          maxOutputTokens: 3500,   // plenty for a compact alt
+          maxOutputTokens: 3500, // plenty for a compact alt
           temperature: 0.6
-
         });
 
         const finalAlt = altText?.trim();

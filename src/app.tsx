@@ -136,16 +136,18 @@ export default function Chat() {
   };
 
   return (
-    <div className="h-[100vh] w-full p-4 flex justify-center items-center overflow-hidden
+    <div
+      className="h-[100vh] w-full p-4 flex justify-center items-center overflow-hidden
   bg-fixed
   bg-[radial-gradient(1400px_700px_at_15%_-10%,rgba(244,129,32,0.30),transparent),radial-gradient(1100px_600px_at_85%_120%,rgba(244,129,32,0.18),transparent),linear-gradient(180deg,rgba(0,0,0,0.25),transparent_20%,transparent_80%,rgba(0,0,0,0.35)),radial-gradient(1200px_800px_at_50%_40%,rgba(255,255,255,0.05),transparent),repeating-linear-gradient(0deg,rgba(255,255,255,0.04)_0,rgba(255,255,255,0.04)_2px,transparent_2px,transparent_14px)]
-  dark:bg-[radial-gradient(1400px_700px_at_15%_-10%,rgba(244,129,32,0.35),transparent),radial-gradient(1100px_600px_at_85%_120%,rgba(244,129,32,0.22),transparent),linear-gradient(180deg,rgba(0,0,0,0.45),transparent_20%,transparent_80%,rgba(0,0,0,0.65)),radial-gradient(1200px_800px_at_50%_40%,rgba(255,255,255,0.06),transparent),repeating-linear-gradient(0deg,rgba(255,255,255,0.05)_0,rgba(255,255,255,0.05)_2px,transparent_2px,transparent_14px)]">
-
+  dark:bg-[radial-gradient(1400px_700px_at_15%_-10%,rgba(244,129,32,0.35),transparent),radial-gradient(1100px_600px_at_85%_120%,rgba(244,129,32,0.22),transparent),linear-gradient(180deg,rgba(0,0,0,0.45),transparent_20%,transparent_80%,rgba(0,0,0,0.65)),radial-gradient(1200px_800px_at_50%_40%,rgba(255,255,255,0.06),transparent),repeating-linear-gradient(0deg,rgba(255,255,255,0.05)_0,rgba(255,255,255,0.05)_2px,transparent_2px,transparent_14px)]"
+    >
       <HasOpenAIKey />
-      <div className="h-[calc(100vh-2rem)] w-full mx-auto max-w-lg flex flex-col shadow-xl rounded-md overflow-hidden relative
+      <div
+        className="h-[calc(100vh-2rem)] w-full mx-auto max-w-lg flex flex-col shadow-xl rounded-md overflow-hidden relative
   border border-neutral-300 dark:border-neutral-800
-  bg-white/90 dark:bg-neutral-950/90">
-
+  bg-white/90 dark:bg-neutral-950/90"
+      >
         <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10">
           <div className="flex items-center justify-center h-8 w-8">
             <svg
@@ -210,27 +212,34 @@ export default function Chat() {
                   </div>
                   <h3 className="font-semibold text-lg">Plan your next trip</h3>
                   <p className="text-muted-foreground text-sm">
-                    I’ll draft a lightweight, day-by-day itinerary with a simple budget band. Try:
+                    I’ll draft a lightweight, day-by-day itinerary with a simple
+                    budget band. Try:
                   </p>
                   <ul className="text-sm text-left space-y-2">
                     <li className="flex items-center gap-2">
                       <span className="text-[#F48120]">•</span>
-                      <span>“3 days in Lisbon, under $150/day, foodie, from Toronto”</span>
+                      <span>
+                        “3 days in Lisbon, under $150/day, foodie, from Toronto”
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#F48120]">•</span>
-                      <span>“Weekend in NYC, art + pizza, prefer walking, no red-eye”</span>
+                      <span>
+                        “Weekend in NYC, art + pizza, prefer walking, no
+                        red-eye”
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#F48120]">•</span>
-                      <span>“7 days in Tokyo on a mid budget, anime + night views”</span>
+                      <span>
+                        “7 days in Tokyo on a mid budget, anime + night views”
+                      </span>
                     </li>
                   </ul>
                 </div>
               </Card>
             </div>
           )}
-
 
           {agentMessages.map((m, index) => {
             const isUser = m.role === "user";
@@ -368,7 +377,6 @@ export default function Chat() {
         >
           <div className="flex items-center gap-2">
             <div className="flex-1 relative">
-            
               <div className="mb-2 flex flex-wrap gap-2">
                 <Button
                   variant="ghost"

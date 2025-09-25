@@ -1,4 +1,5 @@
 # cf_ai_agentic_travel_helper
+
 Cloudflare Agentic AI project
 
 # Agentic Travel Planner (Cloudflare)
@@ -9,6 +10,7 @@ Cloudflare Agentic AI project
 A travel-planning agent that chats with users, remembers preferences across the session, calls tools, and runs a small workflow to post a **one-time alternative itinerary ~15s** after the primary plan. It’s built **entirely on Cloudflare**.
 
 **Architecture**
+
 - **Frontend (Vite SPA):** Branded chat UI with quick chips, dark/light mode.
 - **Agent (Durable Object via Agents SDK):**
   - Extends `AIChatAgent` (`Chat` DO) for **stateful** sessions.
@@ -19,14 +21,15 @@ A travel-planning agent that chats with users, remembers preferences across the 
 - **Routing/Streaming:** `routeAgentRequest` (Agents SDK) + streaming responses; small `/check-open-ai-key` stub for UI health in dev.
 
 **Meets Cloudflare’s checklist**
-1) **Get user input (Chat/WebSockets/Pages):** Real-time chat UI connected to the Agent.  
-2) **Ask AI (Workers AI):** Model hosted on Cloudflare; no external provider required.  
-3) **Guarantee execution (Durable Objects + Workflows):**  
-   - **State**: DO stores memory & workflow flags.  
-   - **Workflow**: `this.schedule(...)` triggers the alt-itinerary task; idempotent per itinerary.  
-4) **Take action (Tools):**  
-   - **Memory tool**: `upsertPreferences` persists preference deltas from natural language.  
-   - **Scheduling tools**: list/cancel tasks (demo).  
+
+1. **Get user input (Chat/WebSockets/Pages):** Real-time chat UI connected to the Agent.
+2. **Ask AI (Workers AI):** Model hosted on Cloudflare; no external provider required.
+3. **Guarantee execution (Durable Objects + Workflows):**
+   - **State**: DO stores memory & workflow flags.
+   - **Workflow**: `this.schedule(...)` triggers the alt-itinerary task; idempotent per itinerary.
+4. **Take action (Tools):**
+   - **Memory tool**: `upsertPreferences` persists preference deltas from natural language.
+   - **Scheduling tools**: list/cancel tasks (demo).
    - Extensible to MCP, D1, Vectorize, etc.
 
 ---
@@ -55,7 +58,7 @@ npx wrangler dev
 - **Tooling & scheduling:** Demo scheduling tools + a simple local-time tool. Easy to extend (weather, bookings, MCP, etc.).
 
 ### Great prompts to try
-- **Teach preferences:**  
+- **Teach preferences:**
 
 - **I avoid cafés, prefer walking, budget $150/day, I’m from Toronto.**
 
@@ -67,3 +70,4 @@ npx wrangler dev
 
 - **Create me a 3 day trip in Tokyo, mid budget, anime + night views and I like walking alot and any type of food is ok.**
 
+```

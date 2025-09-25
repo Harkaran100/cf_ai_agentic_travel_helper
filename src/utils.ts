@@ -135,15 +135,20 @@ export function deepMerge<T>(target: T, source: any): T {
     const set = new Set([...(target as any[]), ...source]);
     return Array.from(set) as unknown as T;
   } else if (
-    typeof target === "object" && target &&
-    typeof source === "object" && source
+    typeof target === "object" &&
+    target &&
+    typeof source === "object" &&
+    source
   ) {
     const out: any = { ...(target as any) };
     for (const k of Object.keys(source)) {
       const tv = (target as any)?.[k];
       const sv = source[k];
       if (Array.isArray(tv) || Array.isArray(sv)) {
-        out[k] = deepMerge(Array.isArray(tv) ? tv : [], Array.isArray(sv) ? sv : [sv]);
+        out[k] = deepMerge(
+          Array.isArray(tv) ? tv : [],
+          Array.isArray(sv) ? sv : [sv]
+        );
       } else if (typeof tv === "object" && tv && typeof sv === "object" && sv) {
         out[k] = deepMerge(tv, sv);
       } else {
@@ -154,4 +159,3 @@ export function deepMerge<T>(target: T, source: any): T {
   }
   return source as T;
 }
-
