@@ -65,5 +65,5 @@ npx wrangler dev
 
 **Generate an itinerary (watch for the alt a few seconds later):**
 
-- **3 days in Lisbon, under $150/day, foodie, from Toronto. Start Friday.**
+- **Create me a 3 day trip in Tokyo, mid budget, anime + night views and I like walking alot and any type of food is ok.**
 

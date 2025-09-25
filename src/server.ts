@@ -182,8 +182,8 @@ export class Chat extends AIChatAgent<Env> {
           model,
           tools: allTools,
           onFinish: wrappedOnFinish,
-          // bump if you need more thinking steps; 10–15 is fine for chat
-          stopWhen: stepCountIs(15)
+          maxOutputTokens: 3500,   // plenty for a compact alt
+          temperature: 0.6
         });
 
         writer.merge(result.toUIMessageStream());
@@ -254,7 +254,10 @@ export class Chat extends AIChatAgent<Env> {
           system:
             "You are an efficient travel-planning writer. Output only the alternative itinerary in a clean Day 1..N format; no preamble.",
           prompt: altPrompt,
-          model
+          model,
+          maxOutputTokens: 3500,   // plenty for a compact alt
+          temperature: 0.6
+
         });
 
         const finalAlt = altText?.trim();

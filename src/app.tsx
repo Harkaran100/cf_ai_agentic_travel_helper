@@ -386,7 +386,7 @@ export default function Chat() {
                   size="sm"
                   onClick={() =>
                     setAgentInput(
-                      "Weekend in NYC, art + pizza, prefer walking, no red-eye flights."
+                      "2 day trip in NYC, I love art + pizza, prefer walking, no red-eye flights."
                     )
                   }
                 >
@@ -397,11 +397,11 @@ export default function Chat() {
                   size="sm"
                   onClick={() =>
                     setAgentInput(
-                      "7 days in Tokyo, mid budget, anime + night views."
+                      "Create me a 3 day trip in Tokyo, mid budget, anime + night views and I like walking alot."
                     )
                   }
                 >
-                  Tokyo 7D
+                  Tokyo 3D
                 </Button>
               </div>
 
