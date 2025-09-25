@@ -34,14 +34,59 @@ export class Chat extends AIChatAgent<Env> {
   ) {
     // Set up Workers AI provider using the bound AI service
     const workersai = createWorkersAI({ binding: this.env.AI });
-    // Pick a Workers AI instruct model available to your account:
-    // Tip: `npx wrangler ai models list`
+    // Tip: `npx wrangler ai models`
     const model = workersai("@cf/meta/llama-3-8b-instruct");
 
     const allTools = {
       ...tools,
       ...this.mcp.getAITools()
     };
+
+    // ---- Read memory from Durable Object state (if any) ----
+    const state = (this.state as {
+      profile?: { preferences?: Record<string, unknown>; notes?: string };
+    }) || {};
+    const profile = state.profile || {};
+    const prefs = (profile.preferences || {}) as Record<string, unknown>;
+    const notes = profile.notes;
+
+    const summarizePrefs = (obj: Record<string, unknown>) => {
+      const entries = Object.entries(obj);
+      if (!entries.length) return "";
+      const parts = entries.map(([k, v]) => {
+        if (Array.isArray(v)) return `${k}=${(v as unknown[]).join(", ")}`;
+        if (typeof v === "object" && v) return `${k}=[…]`;
+        return `${k}=${String(v)}`;
+      });
+      return parts.slice(0, 8).join("; ");
+    };
+
+    const memoryLine = (() => {
+      const p = summarizePrefs(prefs);
+      if (!p && !notes) return "";
+      return `Apply saved user preferences when relevant. ${p ? `Prefs: ${p}.` : ""}${notes ? ` Notes: ${notes}` : ""}`;
+    })();
+
+    // ---- Build final system prompt (adds MEMORY line + hint to call upsertPreferences) ----
+    const systemPrompt = [
+      "You are TravelPlanner, a concise, friendly agent that builds lightweight travel itineraries.",
+      "Goals:",
+      "- Ask brief clarifying questions only when needed (dates, budget/day, interests, origin city).",
+      "- Produce a day-by-day plan (activities, neighborhoods, rough timing, transit mode hints).",
+      "- Include a simple budget band per day (cheap / mid / premium) and flag constraints if unrealistic.",
+      "- Prefer walking/public transit where reasonable; avoid red-eye flights unless user opts in.",
+      "- Keep answers grounded and clearly “suggested” (no guarantees). Encourage users to verify details.",
+      "- Use tools if available (e.g., schedule tool) but never over-ask for confirmation.",
+      "",
+      memoryLine ? `MEMORY: ${memoryLine}` : "",
+      "",
+      getSchedulePrompt({ date: new Date() }),
+      "",
+      "If the user asks to schedule a task, use the schedule tool to schedule the task.",
+      "If the user reveals a durable preference (budget, dislikes, mobility, origin, interests, time constraints), call the `upsertPreferences` tool with a minimal structured delta and optional notes."
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
@@ -56,23 +101,7 @@ export class Chat extends AIChatAgent<Env> {
         });
 
         const result = streamText({
-          system: `You are TravelPlanner, a concise, friendly agent that builds lightweight travel itineraries.
-
-Goals:
-- Ask brief clarifying questions only when needed (dates, budget/day, interests, origin city).
-- Produce a day-by-day plan (activities, neighborhoods, rough timing, transit mode hints).
-- Include a simple budget band per day (cheap / mid / premium) and flag constraints if unrealistic.
-- Prefer walking/public transit where reasonable; avoid red-eye flights unless user opts in.
-- Keep answers grounded and clearly “suggested” (no guarantees). Encourage users to verify details.
-- Use tools if available (e.g., schedule tool) but never over-ask for confirmation.
-
-Memory:
-- Remember simple preferences (e.g., walkable, foodie, no red-eye) for this conversation using state.
-
-${getSchedulePrompt({ date: new Date() })}
-
-If the user asks to schedule a task, use the schedule tool to schedule the task.
-`,
+          system: systemPrompt,
           messages: convertToModelMessages(processedMessages),
           model,
           tools: allTools,

@@ -128,3 +128,30 @@ export function cleanupMessages(messages: UIMessage[]): UIMessage[] {
     return !hasIncompleteToolCall;
   });
 }
+
+// --- dynamic memory helper ---
+export function deepMerge<T>(target: T, source: any): T {
+  if (Array.isArray(target) && Array.isArray(source)) {
+    const set = new Set([...(target as any[]), ...source]);
+    return Array.from(set) as unknown as T;
+  } else if (
+    typeof target === "object" && target &&
+    typeof source === "object" && source
+  ) {
+    const out: any = { ...(target as any) };
+    for (const k of Object.keys(source)) {
+      const tv = (target as any)?.[k];
+      const sv = source[k];
+      if (Array.isArray(tv) || Array.isArray(sv)) {
+        out[k] = deepMerge(Array.isArray(tv) ? tv : [], Array.isArray(sv) ? sv : [sv]);
+      } else if (typeof tv === "object" && tv && typeof sv === "object" && sv) {
+        out[k] = deepMerge(tv, sv);
+      } else {
+        out[k] = sv;
+      }
+    }
+    return out;
+  }
+  return source as T;
+}
+

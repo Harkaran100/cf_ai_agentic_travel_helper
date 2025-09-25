@@ -3,6 +3,7 @@
  * Tools can either require human confirmation or execute automatically
  */
 import { tool, type ToolSet } from "ai";
+import { deepMerge } from "./utils";
 import { z } from "zod/v3";
 
 import type { Chat } from "./server";
@@ -32,6 +33,55 @@ const getLocalTime = tool({
     return "10am";
   }
 });
+
+const upsertPreferences = tool({
+  description:
+    "Persist durable user preferences/profile as structured JSON. " +
+    "Call this when the user states lasting preferences (budget, dislikes, mobility, origin, interests, etc.). " +
+    "Use concise keys, arrays for lists, and include a short human-readable 'notes' if helpful.",
+  inputSchema: z.object({
+    delta: z
+      .record(z.string(), z.any())
+      .default({})
+      .describe("Partial preference JSON to merge into existing memory"),
+    notes: z
+      .string()
+      .optional()
+      .describe("Short summary, e.g., 'Avoid cafés; prefers walking'")
+  }),
+  execute: async ({ delta, notes }) => {
+    const { agent } = getCurrentAgent<Chat>();
+
+    // 1) Read the whole current state from agent.state
+    const state = (agent!.state as {
+      profile?: { preferences?: Record<string, unknown>; notes?: string };
+    }) || {};
+
+    const existing =
+      state.profile ?? ({ preferences: {}, notes: undefined } as {
+        preferences: Record<string, unknown>;
+        notes?: string;
+      });
+
+    // 2) Deep-merge dynamic JSON
+    const merged = {
+      preferences: deepMerge(existing.preferences || {}, delta || {}),
+      notes: notes ?? existing.notes
+    };
+
+    // 3) Write back with single-arg setState
+    await agent!.setState({ profile: merged });
+
+    // Optional compact ack for the chat stream
+    return {
+      saved: true,
+      appliedKeys: Object.keys(delta || {}),
+      preferences: merged.preferences,
+      notes: merged.notes
+    };
+  }
+});
+
 
 const scheduleTask = tool({
   description: "A tool to schedule a task to be executed at a later time",
@@ -115,6 +165,7 @@ const cancelScheduledTask = tool({
 export const tools = {
   getWeatherInformation,
   getLocalTime,
+  upsertPreferences,
   scheduleTask,
   getScheduledTasks,
   cancelScheduledTask
